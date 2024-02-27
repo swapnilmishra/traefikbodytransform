@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"fmt"
 )
 
 // Config the plugin configuration.
@@ -37,6 +38,7 @@ type transformer struct {
 
 // New created a new transformer plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+	fmt.Println("traefikbodytransform ==> initialized")
 	return &transformer{
 		next:                                  next,
 		name:                                  name,
@@ -54,12 +56,19 @@ func (a *transformer) log(format string) {
 }
 
 func (a *transformer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	fmt.Println("traefikbodytransform ==> inside ServeHTTP")
 	transformerOption := make(map[string]bool)
 
 	if param := req.URL.Query().Get(a.transformerQueryParameterName); len(param) > 0 {
 		for _, opt := range strings.Split(strings.ToLower(param), "|") {
+			fmt.Println("traefikbodytransform:opt ==>", opt)
 			transformerOption[opt] = true
 		}
+	}
+
+	fmt.Println("printing transformerOption ==>")
+	for opt, optVal := range transformerOption {
+    fmt.Println(opt, optVal)
 	}
 
 	if transformerOption["body"] {
@@ -87,7 +96,9 @@ func (a *transformer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if transformerOption["bearer"] {
+		fmt.Println("traefikbodytransform ==> inside if bearer")
 		token := req.URL.Query().Get(a.tokenTransformQueryParameterFieldName)
+		fmt.Println("traefikbodytransform:token ==>", token)
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
